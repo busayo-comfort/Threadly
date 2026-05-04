@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
     const accessToken = signAccessToken(user._id.toString());
     const refreshToken = signRefreshToken(user._id.toString());
 
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("userId", user._id);
+
     const response = NextResponse.json(
       {
         message: "Login successful",

@@ -1,7 +1,7 @@
 import { createServer } from "http";
 import { parse } from "url";
 import next from "next";
-import { initSocketServer } from "./app/lib/socket-server";
+import { initSocketServer } from "./src/app/lib/socket-server";
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });

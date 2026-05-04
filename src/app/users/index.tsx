@@ -1,6 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "../lib/api";
+import { queryKeys } from "../lib/querykeys";
 
 interface IUser {
   _id: string;
@@ -11,40 +15,38 @@ interface IUser {
   lastSeen: Date;
 }
 
+const fetchUsers = async (): Promise<IUser[]> => {
+  const { data } = await axiosInstance.get("/users");
+  if (!data.success) throw new Error("Failed to fetch users");
+  return data.data;
+};
+
 const Users = () => {
-  const [users, setUsers] = useState<IUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch("/api/users");
-        const data = await response.json();
+  const {
+    data: users = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: queryKeys.users,
+    queryFn: fetchUsers,
+  });
 
-        if (data.success) {
-          setUsers(data.data);
-        } else {
-          setError("Failed to fetch users");
-        }
-      } catch (err) {
-        setError("Error fetching users");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, []);
-
-  const handleMessage = (userId: string, username: string) => {
-    console.log(`Message button clicked for user: ${username} (${userId})`);
-    // TODO: Implement message functionality (redirect to chat or open message modal)
+  const handleMessage = (userId: string) => {
+    router.push(`/message/${userId}`);
   };
 
-  if (loading) return <div className="p-4">Loading users...</div>;
-  if (error) return <div className="p-4 text-red-500">{error}</div>;
+  if (isLoading) return <div className="p-4">Loading users...</div>;
+
+  if (isError) {
+    return (
+      <div className="p-4 text-red-500">
+        {error instanceof Error ? error.message : "Error fetching users"}
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -69,19 +71,20 @@ const Users = () => {
                 <div>
                   <p className="font-semibold">{user.username}</p>
                   <p className="text-sm text-gray-600">{user.email}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs">
                     {user.isOnline ? (
                       <span className="text-green-600">● Online</span>
                     ) : (
                       <span className="text-gray-400">
-                        ● Last seen: {new Date(user.lastSeen).toLocaleDateString()}
+                        ● Last seen:{" "}
+                        {new Date(user.lastSeen).toLocaleDateString()}
                       </span>
                     )}
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => handleMessage(user._id, user.username)}
+                onClick={() => handleMessage(user._id)}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
               >
                 Message

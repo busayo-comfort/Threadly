@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET as string;
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string;
+const SECRET = process.env.ACCESS_TOKEN_SECRET as string;
+const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET as string;
 
 if (!SECRET || !REFRESH_SECRET) throw new Error("JWT secrets are not defined in .env");
 

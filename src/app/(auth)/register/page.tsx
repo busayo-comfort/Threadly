@@ -36,7 +36,7 @@ const Register = () => {
       return response.data
     },
     onSuccess: () => {
-      router.push('/users')
+      router.push('/mycontacts')
     },
     onError: (error: any) => {
       console.error('Registration failed:', error.response?.data?.message || error.message)

@@ -45,22 +45,6 @@ const MessageUser = () => {
   const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const accessToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
-  const handleLogout = async () => {
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("userId");
-
-    try {
-      await axiosInstance.post("/auth/logout");
-    } catch {
-      // Continue logout even if API call fails
-    }
-    queryClient.clear();
-    router.push("/login");
-  };
 
   const {
     data: conversation,
@@ -221,16 +205,6 @@ const MessageUser = () => {
             <span className="text-xs text-gray-400">Offline</span>
           )}
         </div>
-
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition px-2 py-1 rounded-lg hover:bg-red-50"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-            <path fillRule="evenodd" d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V15a.75.75 0 011.5 0v3.75a3 3 0 01-3 3h-6a3 3 0 01-3-3V5.25a3 3 0 013-3h6a3 3 0 013 3V9A.75.75 0 0115 9V5.25a1.5 1.5 0 00-1.5-1.5h-6zm10.72 4.72a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H9a.75.75 0 010-1.5h10.94l-1.72-1.72a.75.75 0 010-1.06z" clipRule="evenodd" />
-          </svg>
-          Logout
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2 bg-gray-50">

@@ -32,6 +32,7 @@ const Users = () => {
   } = useQuery({
     queryKey: queryKeys.users,
     queryFn: fetchUsers,
+    
   });
 
   const handleMessage = (userId: string) => {

@@ -19,7 +19,7 @@ const Login = () => {
     onSuccess: (data) => {
       localStorage.setItem('accessToken', data.accessToken)
       localStorage.setItem('userId', data.user._id)
-      router.push('/')
+      router.push('/mycontacts')
     },
     onError: (error: any) => {
       console.error('Login failed:', error.response?.data?.message || error.message)

@@ -7,7 +7,7 @@ import { getUserIdFromRequest } from "@/app/lib/db/getUserIdFromRequest";
 // GET /api/conversations/[id]/messages?page=1&limit=50
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const userId = getUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -15,9 +15,10 @@ export async function GET(
   try {
     await connectDB();
 
+        const { id: conversationId } = await params;
     // Verify user is a participant
     const convo = await Conversation.findOne({
-      _id: params.id,
+      _id: conversationId,
       participants: userId,
     });
 
@@ -31,12 +32,12 @@ export async function GET(
     const skip  = (page - 1) * limit;
 
     const [messages, total] = await Promise.all([
-      Message.find({ conversationId: params.id })
+      Message.find({ conversationId: conversationId })
         .populate("sender", "username avatar")
         .sort({ createdAt: -1 })  // newest first
         .skip(skip)
         .limit(limit),
-      Message.countDocuments({ conversationId: params.id }),
+      Message.countDocuments({ conversationId: conversationId }),
     ]);
 
     return NextResponse.json(

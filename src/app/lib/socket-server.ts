@@ -18,7 +18,7 @@ export function initSocketServer(httpServer: HTTPServer) {
       methods: ["GET", "POST"],
       credentials: true,
     },
-    path: "/api/socket",      // matches your Next.js /api/socket health route
+    path: "/socket.io",      
   });
 
   // ── Auth middleware ──────────────────────────────────────────────────────────
@@ -77,6 +77,9 @@ export function initSocketServer(httpServer: HTTPServer) {
         }
 
         socket.join(`conversation:${conversationId}`);
+         const room = io.sockets.adapter.rooms.get(`conversation:${conversationId}`);
+         console.log(`[Room: ${conversationId}] members: ${room?.size ?? 0}`);
+
         socket.emit("conversation:joined", { conversationId });
       } catch (err) {
         console.error("[conversation:join]", err);

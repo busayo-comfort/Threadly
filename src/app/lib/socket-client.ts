@@ -6,7 +6,7 @@ export function getSocket(accessToken: string): Socket {
   if (socket?.connected) return socket;
 
   socket = io(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000", {
-    path: "/api/socket",
+    path: "/socket.io",
     auth: { token: accessToken },  // passed to server middleware
     autoConnect: true,
     reconnection: true,

@@ -43,9 +43,6 @@ export async function POST(req: NextRequest) {
     const accessToken = signAccessToken(user._id.toString());
     const refreshToken = signRefreshToken(user._id.toString());
 
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("userId", user._id);
-
     const response = NextResponse.json(
       {
         message: "Login successful",
@@ -66,7 +63,7 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 60 * 60 * 24 * 7,
-      path: "/",
+      path: "/users",
     });
 
     return response;

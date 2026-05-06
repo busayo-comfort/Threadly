@@ -16,7 +16,9 @@ const Login = () => {
       const response = await axiosInstance.post('/auth/login', credentials)
       return response.data
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      localStorage.setItem('accessToken', data.accessToken)
+      localStorage.setItem('userId', data.user._id)
       router.push('/')
     },
     onError: (error: any) => {

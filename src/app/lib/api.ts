@@ -1,39 +1,4 @@
-// import axios from "axios";
 
-// // Base config
-// const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-
-// // Public client (no auth)
-// export const publicApi = axios.create({
-//   baseURL: BASE_URL,
-//   withCredentials: true, // allows cookies if needed
-// });
-
-// // Private client (auth required)
-// export const privateApi = axios.create({
-//   baseURL: BASE_URL,
-//   withCredentials: true,
-// });
-
-// const getTokenFromCookies = () => {
-//   if (typeof document === "undefined") return null;
-
-//   const match = document.cookie.match(/(^| )token=([^;]+)/);
-//   return match ? match[2] : null;
-// };
-
-// privateApi.interceptors.request.use(
-//   (config) => {
-//     const token = getTokenFromCookies();
-
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-
-//     return config;
-//   },
-//   (error) => Promise.reject(error)
-// );
 
 import axios from "axios";
 
@@ -44,7 +9,21 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // 🔥 REQUIRED for cookies
+  withCredentials: true, 
 });
+
+// Add authorization header on client side only
+axiosInstance.interceptors.request.use(
+  (config) => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default axiosInstance;

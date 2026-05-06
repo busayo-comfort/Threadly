@@ -2,7 +2,18 @@ import { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 
 export function getUserIdFromRequest(req: NextRequest): string | null {
-  const token = req.cookies.get("token")?.value;
+  // Try to get token from Authorization header first
+  const authHeader = req.headers.get("Authorization");
+  let token: string | null = null;
+
+  if (authHeader?.startsWith("Bearer ")) {
+    token = authHeader.slice(7); // Remove "Bearer " prefix
+  }
+
+  // Fallback to cookies if no Authorization header
+  if (!token) {
+    token = req.cookies.get("token")?.value || req.cookies.get("accessToken")?.value || null;
+  }
 
   if (!token) return null;
 

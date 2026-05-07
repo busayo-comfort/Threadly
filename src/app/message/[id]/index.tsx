@@ -1,6 +1,5 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { io, Socket } from "socket.io-client";
@@ -29,11 +28,8 @@ const fetchMessages = async (conversationId: string): Promise<Message[]> => {
   return data.messages ?? [];
 };
 
-const MessageUser = () => {
-  const { id: targetUserId } = useParams<{ id: string }>();
-  const router = useRouter();
+const MessagePanel = ({ targetUserId }: { targetUserId: string }) => {
   const queryClient = useQueryClient();
-
   const socketRef = useRef<Socket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<NodeJS.Timeout | null>(null);
@@ -45,7 +41,6 @@ const MessageUser = () => {
   const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const accessToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
-
   const {
     data: conversation,
     isPending: conversationLoading,
@@ -55,8 +50,13 @@ const MessageUser = () => {
     mutationFn: () => getOrCreateConversation(targetUserId),
   });
 
+  // Re-run when targetUserId changes (user clicks different contact)
   useEffect(() => {
-    if (targetUserId) initConversation();
+    if (targetUserId) {
+      setSocketReady(false);
+      setInput("");
+      initConversation();
+    }
   }, [targetUserId]);
 
   const conversationId = conversation?._id;
@@ -87,7 +87,6 @@ const MessageUser = () => {
       queryClient.setQueryData<Message[]>(
         queryKeys.messages(conversationId),
         (prev = []) => {
-          // Swap out the optimistic message for the real one
           const withoutOptimistic = prev.filter(
             (m) => !(m._id.startsWith("temp-") && m.sender._id === currentUserId)
           );
@@ -120,10 +119,8 @@ const MessageUser = () => {
 
   const sendMessage = () => {
     if (!input.trim() || !socketRef.current || !conversationId || !currentUserId) return;
-
     const content = input.trim();
 
-    // Optimistic update — sender sees message immediately
     const optimisticMessage: Message = {
       _id: `temp-${Date.now()}`,
       sender: { _id: currentUserId, username: "You" },
@@ -145,7 +142,6 @@ const MessageUser = () => {
   const handleInputChange = (value: string) => {
     setInput(value);
     if (!socketRef.current || !conversationId) return;
-
     socketRef.current.emit("typing:start", conversationId);
     if (typingTimer.current) clearTimeout(typingTimer.current);
     typingTimer.current = setTimeout(() => {
@@ -157,15 +153,15 @@ const MessageUser = () => {
 
   if (conversationError) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-red-500 text-sm">Failed to load conversation.</p>
+      <div className="flex items-center justify-center h-full">
+        <p className="text-red-400 text-sm">Failed to load conversation.</p>
       </div>
     );
   }
 
   if (conversationLoading || messagesLoading || !socketReady) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="flex items-center gap-2 text-gray-400 text-sm">
           <span className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
           Connecting…
@@ -175,48 +171,32 @@ const MessageUser = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen max-w-xl mx-auto border-x border-gray-200">
-
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white">
-        {/* Back button */}
-        <button
-          onClick={() => router.back()}
-          className="text-gray-400 hover:text-gray-600 transition mr-1"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path fillRule="evenodd" d="M11.03 3.97a.75.75 0 010 1.06l-6.22 6.22H21a.75.75 0 010 1.5H4.81l6.22 6.22a.75.75 0 11-1.06 1.06l-7.5-7.5a.75.75 0 010-1.06l7.5-7.5a.75.75 0 011.06 0z" clipRule="evenodd" />
-          </svg>
-        </button>
-
-        {/* Avatar */}
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 bg-white shrink-0">
         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600 uppercase shrink-0">
           {otherParticipant?.username?.[0] ?? "?"}
         </div>
-
-        {/* Name + status */}
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col">
           <span className="text-sm font-semibold leading-tight">
             {otherParticipant?.username ?? "Conversation"}
           </span>
-          {otherParticipant?.isOnline ? (
-            <span className="text-xs text-green-500">Online</span>
-          ) : (
-            <span className="text-xs text-gray-400">Offline</span>
-          )}
+          <span className={`text-xs ${otherParticipant?.isOnline ? "text-green-500" : "text-gray-400"}`}>
+            {otherParticipant?.isOnline ? "Online" : "Offline"}
+          </span>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2 bg-gray-50">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2 bg-gray-50">
         {messages.length === 0 && (
           <p className="text-center text-gray-400 text-xs mt-8">No messages yet. Say hi! 👋</p>
         )}
-
         {messages.map((msg) => {
           const isMine = msg.sender._id === currentUserId;
           return (
             <div key={msg._id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm leading-snug ${
+              <div className={`max-w-[65%] px-3 py-2 rounded-2xl text-sm leading-snug ${
                 isMine
                   ? "bg-black text-white rounded-br-sm"
                   : "bg-white text-gray-900 border border-gray-200 rounded-bl-sm"
@@ -232,7 +212,6 @@ const MessageUser = () => {
             </div>
           );
         })}
-
         {isTyping && (
           <div className="flex justify-start">
             <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-2 flex gap-1 items-center">
@@ -242,12 +221,11 @@ const MessageUser = () => {
             </div>
           </div>
         )}
-
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Input bar ──────────────────────────────────────────────────────── */}
-      <div className="px-4 py-3 border-t border-gray-200 bg-white flex items-center gap-2">
+      {/* Input */}
+      <div className="px-5 py-3 border-t border-gray-200 bg-white flex items-center gap-2 shrink-0">
         <input
           className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-black/10 transition"
           value={input}
@@ -269,4 +247,4 @@ const MessageUser = () => {
   );
 };
 
-export default MessageUser;
+export default MessagePanel;

@@ -1,9 +1,12 @@
+"use client"
 import React from 'react'
-import MessageUser from '.'
+import MessagePanel from '.'
+import { useParams } from 'next/navigation'
 
 const page = () => {
+  const params = useParams()
   return (
-    <div><MessageUser/></div>
+    <div><MessagePanel targetUserId={params.userId as string} /></div>
   )
 }
 

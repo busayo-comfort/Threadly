@@ -1,10 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import axiosInstance from "../lib/api";
-import { queryKeys } from "../lib/querykeys";
+import axiosInstance from "@/app/lib/api";
 
 interface IUser {
   _id: string;
@@ -15,85 +14,103 @@ interface IUser {
   lastSeen: Date;
 }
 
-const fetchUsers = async (): Promise<IUser[]> => {
-  const { data } = await axiosInstance.get("/users");
-  if (!data.success) throw new Error("Failed to fetch users");
-  return data.data;
+const searchUsers = async (query: string): Promise<IUser[]> => {
+  if (query.length < 2) return [];
+  const { data } = await axiosInstance.get(`/users/search?q=${encodeURIComponent(query)}`);
+  return data.users ?? [];
 };
 
 const Users = () => {
   const router = useRouter();
+  const [query, setQuery] = useState("");
 
-  const {
-    data: users = [],
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: queryKeys.users,
-    queryFn: fetchUsers,
-    
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ["users", "search", query],
+    queryFn: () => searchUsers(query),
+    enabled: query.length >= 2,   // only search after 2 chars
   });
 
-  const handleMessage = (userId: string) => {
-    router.push(`/message/${userId}`);
-  };
-
-  if (isLoading) return <div className="p-4">Loading users...</div>;
-
-  if (isError) {
-    return (
-      <div className="p-4 text-red-500">
-        {error instanceof Error ? error.message : "Error fetching users"}
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Users</h1>
-      {users.length === 0 ? (
-        <p className="text-gray-500">No users found</p>
-      ) : (
-        <div className="grid gap-4">
-          {users.map((user) => (
-            <div
-              key={user._id}
-              className="border rounded-lg p-4 flex items-center justify-between hover:bg-gray-50"
-            >
-              <div className="flex items-center gap-4">
-                {user.avatar && (
-                  <img
-                    src={user.avatar}
-                    alt={user.username}
-                    className="w-12 h-12 rounded-full"
-                  />
-                )}
-                <div>
-                  <p className="font-semibold">{user.username}</p>
-                  <p className="text-sm text-gray-600">{user.email}</p>
-                  <p className="text-xs">
-                    {user.isOnline ? (
-                      <span className="text-green-600">● Online</span>
-                    ) : (
-                      <span className="text-gray-400">
-                        ● Last seen:{" "}
-                        {new Date(user.lastSeen).toLocaleDateString()}
-                      </span>
-                    )}
-                  </p>
-                </div>
+    <div className="max-w-xl mx-auto p-6">
+      <h1 className="text-xl font-bold mb-4">New Message</h1>
+
+      {/* Search input */}
+      <div className="relative mb-6">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by username or email…"
+          className="w-full bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-black/10 transition"
+        />
+        {query && (
+          <button
+            onClick={() => setQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* States */}
+      {query.length < 2 && (
+        <p className="text-center text-gray-400 text-sm mt-12">
+          Type at least 2 characters to search for people
+        </p>
+      )}
+
+      {query.length >= 2 && isLoading && (
+        <div className="flex justify-center mt-12">
+          <span className="w-5 h-5 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
+        </div>
+      )}
+
+      {query.length >= 2 && !isLoading && users.length === 0 && (
+        <p className="text-center text-gray-400 text-sm mt-12">
+          No users found for "{query}"
+        </p>
+      )}
+
+      {/* Results */}
+      <div className="flex flex-col gap-2">
+        {users.map((user) => (
+          <div
+            key={user._id}
+            className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-200 transition"
+          >
+            <div className="flex items-center gap-3">
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600 uppercase shrink-0">
+                {user.avatar
+                  ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" />
+                  : user.username[0]
+                }
               </div>
+
+              <div>
+                <p className="text-sm font-semibold">{user.username}</p>
+                <p className="text-xs text-gray-400">{user.email}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Online badge */}
+              <span className={`text-xs ${user.isOnline ? "text-green-500" : "text-gray-400"}`}>
+                {user.isOnline ? "● Online" : "● Offline"}
+              </span>
+
+              {/* Message button */}
               <button
-                onClick={() => handleMessage(user._id)}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                onClick={() => router.push(`/message/${user._id}`)}
+                className="text-xs bg-black text-white px-3 py-1.5 rounded-full hover:bg-gray-800 transition"
               >
                 Message
               </button>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

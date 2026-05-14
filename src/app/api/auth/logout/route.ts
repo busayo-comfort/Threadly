@@ -23,6 +23,7 @@ export async function POST(req: Request) {
     );
 
     response.cookies.delete("refreshToken");
+    response.cookies.delete("accessToken");
     return response;
   } catch {
     // Even if token is invalid, clear the cookie

@@ -57,7 +57,13 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
-
+    response.cookies.set("accessToken", accessToken, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: 60 * 15,
+  path: "/",
+});
     response.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

@@ -23,6 +23,7 @@ const searchUsers = async (query: string): Promise<IUser[]> => {
 const Users = () => {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const isValid = query.length >= 2;
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["users", "search", query],
@@ -60,13 +61,13 @@ const Users = () => {
         </p>
       )}
 
-      {query.length >= 2 && isLoading && (
+      {isValid && isLoading && (
         <div className="flex justify-center mt-12">
           <span className="w-5 h-5 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
         </div>
       )}
 
-      {query.length >= 2 && !isLoading && users.length === 0 && (
+      {isValid && !isLoading && users.length === 0 && (
         <p className="text-center text-gray-400 text-sm mt-12">
           No users found for "{query}"
         </p>

@@ -28,15 +28,17 @@ const Login = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+        console.log(process.env.MONGODB_URI);
     loginMutation.mutate({ email, password })
+    
   }
-  setTimeout(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      localStorage.removeItem("accessToken");
-      router.push("/");
-    }
-  }, 600000);
+  // setTimeout(() => {
+  //   const token = localStorage.getItem("accessToken");
+  //   if (token) {
+  //     localStorage.removeItem("accessToken");
+  //     router.push("/");
+  //   }
+  // }, 600000);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">

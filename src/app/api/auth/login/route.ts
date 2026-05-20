@@ -78,6 +78,64 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
+      
     );
   }
-}
+ }
+//  import { NextRequest, NextResponse } from "next/server";
+//  import bcrypt from "bcryptjs";
+// import { connectDB, User } from "@/app/lib/db";
+// import { signAccessToken, signRefreshToken } from "../jwt";
+
+// export async function POST(req: NextRequest) {
+//   try {
+//     await connectDB();
+
+//     const body = await req.json();
+//     console.log("BODY:", body);
+
+//     const { email, password } = body;
+
+//     const user = await User.findOne({ email }).select("+password");
+
+//     console.log("USER:", user);
+
+//     if (!user) {
+//       return NextResponse.json(
+//         { message: "Invalid credentials" },
+//         { status: 401 }
+//       );
+//     }
+
+//     const isMatch = await bcrypt.compare(password, user.password);
+
+//     console.log("MATCH:", isMatch);
+
+//     if (!isMatch) {
+//       return NextResponse.json(
+//         { message: "Invalid credentials" },
+//         { status: 401 }
+//       );
+//     }
+
+//     const token = jwt.sign(
+//       { userId: user._id },
+//       process.env.JWT_SECRET!,
+//       { expiresIn: "7d" }
+//     );
+
+//     return NextResponse.json({
+//       success: true,
+//       token,
+//     });
+//   } catch (error) {
+//     console.error("LOGIN ERROR FULL:", error);
+
+//     return NextResponse.json(
+//       {
+//         error: String(error),
+//       },
+//       { status: 500 }
+//     );
+//   }
+// }
